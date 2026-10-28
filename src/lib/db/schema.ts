@@ -61,6 +61,8 @@ export const workspaces = pgTable("workspaces", {
   activePinned: boolean("active_pinned").notNull().default(false),
   /** The past hackathon RubricRoom moved the workspace off; shown as a notice until dismissed. */
   switchedFromId: text("switched_from_id"),
+  /** When the workspace was offered the sample workspace (on its first page view); never offered twice. */
+  showcaseAt: ts("showcase_at"),
   createdAt: created(),
   lastSeenAt: ts("last_seen_at").notNull().defaultNow(),
 });

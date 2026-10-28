@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
+import { SampleBanner } from "@/components/examples/example-banner";
 import { DebateRoom } from "@/components/judge/debate-room";
 import { isAIConfigured } from "@/lib/ai";
 import { pageContext } from "@/lib/page-context";
 import { getDebateBundle } from "@/lib/services/debates";
 import { rubricContext, versionToFields } from "@/lib/services/ideas";
+import { isShowcaseHackathon } from "@/lib/services/showcase";
 
 export const metadata = { title: "Judge's Room" };
 
@@ -14,7 +16,7 @@ export default async function DebatePage({ params }: { params: Promise<{ id: str
   if (!b) notFound();
   const { criteria, hackathon } = await rubricContext(workspaceId, b.idea.hackathonId, b.session.track);
   const revById = new Map(b.revisions.map((r) => [r.id, r]));
-  return (
+  const room = (
     <DebateRoom
       sessionId={b.session.id}
       ideaId={b.idea.id}
@@ -46,5 +48,13 @@ export default async function DebatePage({ params }: { params: Promise<{ id: str
       hackathonName={hackathon?.name ?? null}
       opening={!b.current || !b.turns.some((t) => t.speaker === "judge")}
     />
+  );
+  return hackathon && isShowcaseHackathon(hackathon) ? (
+    <div className="space-y-4">
+      <SampleBanner compact />
+      {room}
+    </div>
+  ) : (
+    room
   );
 }

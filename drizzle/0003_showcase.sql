@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD COLUMN "showcase_at" timestamp with time zone;

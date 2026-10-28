@@ -416,7 +416,7 @@ export function DebateRoom(p: DebateRoomProps) {
                           <p className="mt-0.5 text-muted-foreground">{t.ideaUpdate.summary}</p>
                           {!!t.ideaUpdate.removedFeatures?.length && <p className="mt-1 text-coral">Remove: {t.ideaUpdate.removedFeatures.join(", ")}</p>}
                           {!!t.ideaUpdate.addedFeatures?.length && <p className="mt-1 text-teal">Add: {t.ideaUpdate.addedFeatures.join(", ")}</p>}
-                          <div className="mt-2 flex gap-2">
+                          <div className="mt-2 flex flex-wrap gap-2">
                             <Button size="sm" onClick={() => resolve(t.id, "apply")} loading={busy} data-testid="apply-update">
                               <Check /> Confirm: new version and reassess
                             </Button>

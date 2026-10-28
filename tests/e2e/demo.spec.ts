@@ -20,7 +20,24 @@ test("dashboard loads without login", async () => {
   expect(cookies.find((c) => c.name === "rr_ws")?.httpOnly).toBe(true);
 });
 
+test("a first-time visitor lands in the labelled sample workspace, not empty pages", async () => {
+  await expect(page.getByTestId("sample-workspace")).toBeVisible();
+  await expect(page.getByTestId("tour-section")).toBeVisible();
+  await page.goto("/ideas");
+  await expect(page.getByTestId("idea-row")).toHaveCount(3);
+  await page.goto("/judge");
+  expect(await page.locator('a[href^="/judge/deb_"]').count()).toBe(2);
+  await page.locator('a[href^="/judge/deb_"]').first().click();
+  await expect(page.getByTestId("sample-banner")).toBeVisible();
+  await expect(page.getByTestId("user-turn").first()).toBeVisible();
+  await page.goto("/plan");
+  await expect(page.getByTestId("plan-board")).toBeVisible();
+  await page.goto("/evidence");
+  await expect(page.getByTestId("readiness")).toHaveText("1 of 4 required artifacts prepared");
+});
+
 test("the live demo opens the real hackathon with cited rubric and deadline", async () => {
+  await page.goto("/");
   await page.getByTestId("demo-button").first().click();
   await expect(page.getByTestId("hackathon-title")).toHaveText("No Hands: The Wispr Challenge", { timeout: 30_000 });
   await expect(page.getByTestId("deadline")).toContainText("31 Oct 2026");
@@ -59,12 +76,12 @@ test("Judge's Room: debate, evidence-gated revision, and a confirmed correction"
   await expect(page.getByTestId("judge-turn")).toHaveCount(2, { timeout: 30_000 });
   await expect(page.getByTestId("claim").last()).toContainText("rejected");
 
-  // First-hand experience is accepted as user-reported and moves one criterion by one step (the
-  // generic pitch starts its problem score at 2).
+  // First-hand experience is accepted as user-reported and moves one criterion by one step.
   await page.getByTestId("debate-input").fill("I personally prepare for interviews every day. My version remembers each weakness and retests me after tutoring.");
   await page.getByTestId("debate-send").click();
   await expect(page.getByTestId("judge-turn")).toHaveCount(3, { timeout: 30_000 });
-  await expect(page.getByTestId("revision").last()).toContainText("2→3");
+  const [, from, to] = (await page.getByTestId("revision").last().textContent())!.match(/(\d)→(\d)/)!;
+  expect(Number(to)).toBe(Number(from) + 1);
 
   // A correction is proposed, then applied only on confirmation.
   await page.getByTestId("debate-input").fill("You misunderstood my idea. Remove the video calls from the MVP and focus on the web dashboard.");

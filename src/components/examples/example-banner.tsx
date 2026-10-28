@@ -6,13 +6,27 @@ import { getDb } from "@/lib/db/client";
 import { debateSessions, projectIdeas } from "@/lib/db/schema";
 import { EXAMPLE_DISCLOSURE, listExamples } from "@/lib/services/examples";
 import { latestPlanFor } from "@/lib/services/plans";
+import { isShowcaseHackathon, SHOWCASE_META } from "@/lib/services/showcase";
 import { formatDate } from "@/lib/utils";
+
+/** The sample workspace's label: what was captured and what was written for it. */
+export function SampleBanner({ compact = false }: { compact?: boolean }) {
+  if (!SHOWCASE_META) return null;
+  return (
+    <div data-testid="sample-banner">
+      <Callout tone="neutral" title={`Sample workspace · captured ${formatDate(SHOWCASE_META.capturedAt, "Asia/Kolkata")} with ${SHOWCASE_META.model}`}>
+        {compact ? <p>The participant&apos;s answers were written to demonstrate RubricRoom; the panel&apos;s replies and the score changes are Verdict&apos;s actual output.</p> : <p>{SHOWCASE_META.disclosure}</p>}
+      </Callout>
+    </div>
+  );
+}
 
 /**
  * Shown on an example run's hackathon and idea pages: what was captured, what was written for the
  * example, and links to every part of the run.
  */
 export async function ExampleBanner({ workspaceId, seedKey, hackathonId, ideaId }: { workspaceId: string; seedKey: string | null; hackathonId: string; ideaId?: string | null }) {
+  if (seedKey && isShowcaseHackathon({ seedKey })) return <SampleBanner />;
   if (!seedKey?.startsWith("example:")) return null;
   const meta = listExamples().find((e) => `example:${e.key}` === seedKey);
   if (!meta) return null;

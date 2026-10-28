@@ -20,11 +20,12 @@ test("the product tour is on the dashboard for newcomers and one click away for 
   await chapters.filter({ hasText: "the Judge's Room" }).click();
   await expect(chapters.filter({ hasText: "the Judge's Room" })).toHaveAttribute("aria-current", "step");
 
-  // Once the workspace has data, the inline tour steps aside; the hero button still opens it.
+  // The sample workspace isn't the visitor's own work, so the inline tour stays; the hero button
+  // opens it too.
   await page.getByTestId("demo-button").first().click();
   await expect(page.getByTestId("hackathon-title")).toBeVisible({ timeout: 30_000 });
   await page.goto("/");
-  await expect(page.getByTestId("tour-section")).toHaveCount(0);
+  await expect(page.getByTestId("tour-section")).toBeVisible();
   await page.getByTestId("tour-open").click();
   const dialog = page.getByRole("dialog", { name: "RubricRoom in 2 minutes" });
   await expect(dialog.getByTestId("tour-video")).toBeVisible();

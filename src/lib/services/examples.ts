@@ -99,28 +99,35 @@ export const exampleSeedKey = (key: string) => `example:${key}`;
 const ID_RE = /\b[a-z]+_(?:[0-9a-f]{32}|[0-9a-f]{20})\b/g;
 
 /** Turn JSON-revived ISO strings back into Dates for timestamp columns. */
-function reviveDates(table: PgTable, row: Record<string, unknown>) {
+export function reviveDates(table: PgTable, row: Record<string, unknown>) {
   for (const [name, col] of Object.entries(getTableColumns(table))) {
     if (col.dataType === "date" && typeof row[name] === "string") row[name] = new Date(row[name] as string);
   }
   return row;
 }
 
+type CapturedRows = Partial<Record<string, Record<string, unknown>[]>>;
+
 /**
- * Copy one example into a workspace with fresh ids. Every id that appears anywhere in the rows
+ * Give captured rows fresh ids for another workspace. Every id that appears anywhere in the rows
  * (columns or JSON) is remapped consistently, so references between rows survive the copy.
  */
-export function remapExample(example: ExampleFixture["examples"][number], workspaceId: string) {
-  const ids = new Map<string, string>([[example.workspaceId, workspaceId]]);
-  for (const rows of Object.values(example.rows)) {
+export function remapRows<R extends CapturedRows>(captured: R, fromWorkspaceId: string, toWorkspaceId: string) {
+  const ids = new Map<string, string>([[fromWorkspaceId, toWorkspaceId]]);
+  for (const rows of Object.values(captured)) {
     for (const r of rows ?? []) {
       const id = r.id as string;
       if (!ids.has(id)) ids.set(id, newId(id.slice(0, id.indexOf("_"))));
     }
   }
-  const remap = <T>(v: T): T => JSON.parse(JSON.stringify(v).replace(ID_RE, (m) => ids.get(m) ?? m));
-  const rows = remap(example.rows);
+  const rows = JSON.parse(JSON.stringify(captured).replace(ID_RE, (m) => ids.get(m) ?? m)) as R;
   const map = (id: string | null) => (id ? (ids.get(id) ?? id) : null);
+  return { rows, map };
+}
+
+/** Copy one example into a workspace with fresh ids. */
+export function remapExample(example: ExampleFixture["examples"][number], workspaceId: string) {
+  const { rows, map } = remapRows(example.rows, example.workspaceId, workspaceId);
   return { rows, hackathonId: map(example.hackathonId)!, ideaId: map(example.ideaId)!, sessionId: map(example.sessionId), planId: map(example.planId) };
 }
 

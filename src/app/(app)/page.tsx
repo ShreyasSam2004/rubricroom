@@ -5,10 +5,11 @@ import { AnalyzeForm, DemoButton } from "@/components/hackathon/start-actions";
 import { Countdown } from "@/components/shell/countdown";
 import { TourButton, TourPlayer } from "@/components/tour/product-tour";
 import { Button } from "@/components/ui/button";
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, Progress } from "@/components/ui/primitives";
+import { Badge, Callout, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, Progress } from "@/components/ui/primitives";
 import { pageContext } from "@/lib/page-context";
 import { dashboardData } from "@/lib/services/dashboard";
 import { EXAMPLE_DISCLOSURE, listExamples } from "@/lib/services/examples";
+import { isShowcaseHackathon, SHOWCASE_META } from "@/lib/services/showcase";
 import { formatDate, relativeTime } from "@/lib/utils";
 
 const AGENTS = [
@@ -26,6 +27,9 @@ export default async function Dashboard() {
   const { workspaceId, active } = await pageContext();
   const d = await dashboardData(workspaceId, active?.id ?? null);
   const hasData = d.hackathons.length > 0;
+  // Until the visitor brings their own hackathon, the tour stays up and the sample is labelled.
+  const ownWork = d.hackathons.some((h) => h.origin !== "cached_seed");
+  const sample = SHOWCASE_META && d.active && isShowcaseHackathon(d.active) ? d.active : null;
   const examples = listExamples().map((e) => ({ ...e, captured: formatDate(e.capturedAt, "Asia/Kolkata") }));
 
   return (
@@ -49,7 +53,32 @@ export default async function Dashboard() {
         </div>
       </section>
 
-      {!hasData && (
+      {sample && SHOWCASE_META && (
+        <Callout tone="neutral" title={`You're in a sample workspace · captured ${formatDate(SHOWCASE_META.capturedAt, "Asia/Kolkata")} with ${SHOWCASE_META.model}`}>
+          <div data-testid="sample-workspace">
+            <p>
+              It shows RubricRoom working on the WeMakeDevs × Wispr Flow challenge: three sample ideas, two Judge&apos;s Room sessions, a build plan, an evidence note and Opportunity Radar results. Paste your own hackathon link above to start on yours; this sample stays separate.
+            </p>
+            <p className="mt-1.5">{SHOWCASE_META.disclosure}</p>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+              {[
+                { href: `/hackathons/${sample.id}`, label: "Event dossier", icon: ScrollText },
+                { href: "/compare", label: "Idea comparison", icon: Lightbulb },
+                { href: "/judge", label: "Judge's Room sessions", icon: Gavel },
+                { href: "/plan", label: "Build plan", icon: Route },
+                { href: "/evidence", label: "Evidence Board", icon: ClipboardCheck },
+                { href: "/radar", label: "Opportunity Radar", icon: Radar },
+              ].map((l) => (
+                <Link key={l.href} href={l.href} className="inline-flex items-center gap-1.5 !no-underline hover:!underline">
+                  <l.icon className="size-3.5" /> {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </Callout>
+      )}
+
+      {!ownWork && (
         <section className="space-y-3" data-testid="tour-section">
           <div>
             <h2 className="text-lg font-semibold">New here? See how RubricRoom works in 2 minutes</h2>
