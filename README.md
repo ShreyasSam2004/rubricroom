@@ -3,6 +3,8 @@
 **Challenge your idea before the judges do.**
 _Research smarter. Build differently. Prove what matters._
 
+**Live app: [rubricroom.vercel.app](https://rubricroom.vercel.app)**. No login needed: click *Try RubricRoom with a Real Hackathon* to open the WeMakeDevs × Wispr Flow challenge.
+
 Paste a hackathon link, pitch your idea by voice, and let a team of AI specialists research the competition, challenge your assumptions, find better opportunities and build an evidence-backed strategy.
 
 RubricRoom was built for the **WeMakeDevs × Wispr Flow "No Hands" challenge (Track 1: Builders)**. Its principle: *don't just generate ideas — investigate whether they deserve to be built.* It never promises a win and never calls an idea "unique" just because a search came back empty.
