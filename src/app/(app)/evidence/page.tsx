@@ -2,6 +2,7 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { CircleCheck, CircleDashed, ClipboardCheck, Info, Plus } from "lucide-react";
 import { AddEvidence, EvidenceItem } from "@/components/evidence/evidence-ui";
+import { EvidenceIdeaPicker } from "@/components/evidence/idea-picker";
 import { EvidenceBadge } from "@/components/research/badges";
 import { Button } from "@/components/ui/button";
 import { Badge, Callout, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState, PageHeader, Progress } from "@/components/ui/primitives";
@@ -13,7 +14,8 @@ import { formatDeadline } from "@/lib/deadline";
 
 export const metadata = { title: "Evidence Board" };
 
-export default async function EvidencePage() {
+export default async function EvidencePage({ searchParams }: { searchParams: Promise<{ idea?: string }> }) {
+  const sp = await searchParams;
   const { workspaceId, active, ws } = await pageContext();
   if (!active) {
     return (
@@ -25,7 +27,10 @@ export default async function EvidencePage() {
   }
   const db = await getDb();
   const ideas = await db.select().from(projectIdeas).where(eq(projectIdeas.workspaceId, workspaceId)).orderBy(desc(projectIdeas.updatedAt));
-  const idea = ideas.find((i) => i.status === "selected" && i.hackathonId === active.id) ?? ideas.find((i) => i.id === ws.activeIdeaId) ?? null;
+  // Any idea for this hackathon can be chosen; without a choice the board opens on the selected project.
+  const candidates = ideas.filter((i) => i.status !== "archived" && (i.hackathonId === active.id || !i.hackathonId));
+  const fallback = candidates.find((i) => i.status === "selected" && i.hackathonId === active.id) ?? candidates.find((i) => i.id === ws.activeIdeaId) ?? null;
+  const idea = sp.idea === "none" ? null : (candidates.find((i) => i.id === sp.idea) ?? fallback);
   const board = await evidenceBoard(workspaceId, active.id, idea?.id ?? null);
   if (!board) return null;
   const r = board.readiness;
@@ -38,10 +43,12 @@ export default async function EvidencePage() {
         eyebrow="Execution"
         title="Evidence-to-Rubric Board"
         description={`Every official criterion for ${active.name}, linked to the proof judges can actually see${idea ? ` for “${idea.name}”` : ""}.`}
+        actions={candidates.length > 0 && <EvidenceIdeaPicker ideas={candidates.map((i) => ({ id: i.id, name: i.name, selected: i.status === "selected" }))} value={idea?.id ?? null} />}
       />
       {!idea && (
-        <Callout tone="warning" icon={<Info />} title="No project selected">
-          Evidence is tracked per hackathon. <Link href="/compare">Select your project</Link> to attach it to a specific idea.
+        <Callout tone="warning" icon={<Info />} title="No project chosen">
+          {candidates.length ? "Choose a project above to see and attach its evidence. " : <><Link href="/ideas">Pitch an idea</Link> to track evidence for it. </>}
+          Evidence added now counts for the hackathon as a whole.
         </Callout>
       )}
 

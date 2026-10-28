@@ -39,6 +39,10 @@ test("a first-time visitor lands in the labelled sample workspace, not empty pag
   await expect(page.getByTestId("create-plan-submit")).toBeVisible();
   await page.goto("/evidence");
   await expect(page.getByTestId("readiness")).toHaveText("1 of 4 required artifacts prepared");
+  // Like Build Strategy, the board can switch to any idea for this hackathon.
+  await page.locator("#evidence-idea").selectOption({ label: "AI Interview Academy" });
+  await expect(page).toHaveURL(/\/evidence\?idea=idea_/);
+  await expect(page.getByTestId("readiness")).toHaveText("0 of 4 required artifacts prepared");
 });
 
 test("the live demo opens the real hackathon with cited rubric and deadline", async () => {
