@@ -65,7 +65,7 @@ export default async function Dashboard() {
                 { href: `/hackathons/${sample.id}`, label: "Event dossier", icon: ScrollText },
                 { href: "/compare", label: "Idea comparison", icon: Lightbulb },
                 { href: "/judge", label: "Judge's Room sessions", icon: Gavel },
-                { href: "/plan", label: "Build plan", icon: Route },
+                { href: d.plan ? `/plan/${d.plan.id}` : "/plan", label: "Build plan", icon: Route },
                 { href: "/evidence", label: "Evidence Board", icon: ClipboardCheck },
                 { href: "/radar", label: "Opportunity Radar", icon: Radar },
               ].map((l) => (

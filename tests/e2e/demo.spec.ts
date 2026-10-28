@@ -30,8 +30,13 @@ test("a first-time visitor lands in the labelled sample workspace, not empty pag
   await page.locator('a[href^="/judge/deb_"]').first().click();
   await expect(page.getByTestId("sample-banner")).toBeVisible();
   await expect(page.getByTestId("user-turn").first()).toBeVisible();
+  // Build Strategy always offers a new plan, even with the sample's plan in place; the plan is one click away.
   await page.goto("/plan");
+  await expect(page.getByTestId("create-plan-submit")).toBeVisible();
+  await page.locator('a[href^="/plan/plan_"]').first().click();
   await expect(page.getByTestId("plan-board")).toBeVisible();
+  await page.getByRole("link", { name: "All plans" }).click();
+  await expect(page.getByTestId("create-plan-submit")).toBeVisible();
   await page.goto("/evidence");
   await expect(page.getByTestId("readiness")).toHaveText("1 of 4 required artifacts prepared");
 });

@@ -25,9 +25,9 @@ export default async function PlanIndex({ searchParams }: { searchParams: Promis
   const focus = live.find((i) => i.status === "selected") ?? live.find((i) => i.id === ws.activeIdeaId) ?? live[0];
   const focusPlan = focus ? plans.find((p) => p.ideaId === focus.id) : undefined;
 
-  // Voice: "mark the deploy task as done" → open the plan with a confirmation card.
+  // Voice: "mark the deploy task as done" → open the plan with a confirmation card. Otherwise this
+  // page always shows the New plan form, so another idea can be planned even when one plan exists.
   if (sp.task && focusPlan) redirect(`/plan/${focusPlan.id}?task=${encodeURIComponent(sp.task)}&status=${sp.status ?? "done"}`);
-  if (!sp.create && focusPlan && plans.length === 1) redirect(`/plan/${focusPlan.id}`);
 
   return (
     <div className="space-y-6">
@@ -39,10 +39,13 @@ export default async function PlanIndex({ searchParams }: { searchParams: Promis
           </CardHeader>
           <CardContent>
             <CreatePlanForm ideas={live.map((i) => ({ id: i.id, name: i.name, selected: i.status === "selected" }))} defaultIdeaId={focus?.id ?? null} defaultHours={profile.data.hoursPerDay} defaultDays={sp.days ? Number(sp.days) : null} />
+            <p className="mt-3 text-sm text-muted-foreground">
+              Planning a new idea? <Link href="/ideas">Pitch it in My Ideas</Link> first, by voice or text, and it appears in this list.
+            </p>
           </CardContent>
         </Card>
       ) : (
-        <EmptyState icon={<Route />} title="No ideas to plan yet" description="Save or select an idea first." />
+        <EmptyState icon={<Route />} title="No ideas to plan yet" description="Pitch an idea in My Ideas first, by voice or text; then Sprint can plan it." action={<Link href="/ideas">Go to My Ideas</Link>} />
       )}
       {plans.length > 0 && (
         <Card>

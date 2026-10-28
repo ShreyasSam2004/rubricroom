@@ -26,5 +26,8 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 60_000,
     pool: "forks",
+    // Each integration file runs its own embedded Postgres; more parallel forks than this starves
+    // them on a laptop and the slowest tests time out.
+    maxWorkers: 4,
   },
 });
