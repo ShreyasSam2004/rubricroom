@@ -1,0 +1,176 @@
+@import "tailwindcss";
+
+/* Only UI code holds class names. Skipping fixtures (saved third-party pages), seed snapshots,
+   media and scripts keeps CSS rebuilds fast and stray utilities out of the stylesheet. */
+@source not "../../tests";
+@source not "../seed";
+@source not "../../public";
+@source not "../../scripts";
+@source not "../../drizzle";
+@source not "../../brag-output";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f8f9f6;
+  --foreground: #101827;
+  --card: #ffffff;
+  --card-foreground: #101827;
+  --muted: #eef0ec;
+  --muted-foreground: #5b6474;
+  --border: #e2e5df;
+  --input: #d9ddd5;
+  --ring: #6558f5;
+  --primary: #6558f5;
+  --primary-foreground: #ffffff;
+  --primary-soft: #f0eeff;
+  --primary-soft-foreground: #3f33c9;
+  --teal: #0d9488;
+  --teal-soft: #e3f5f2;
+  --amber: #f5b546;
+  --amber-soft: #fdf3df;
+  --amber-foreground: #7a5304;
+  --coral: #e5654d;
+  --coral-soft: #fdebe7;
+  --navy: #101827;
+  --sidebar: #101827;
+  --sidebar-foreground: #c9cfdb;
+  --sidebar-active: #1c2638;
+  --unverified: #8a93a3;
+  --unverified-soft: #eef0f3;
+}
+
+.dark {
+  --background: #0b111c;
+  --foreground: #e8ebf0;
+  --card: #111a29;
+  --card-foreground: #e8ebf0;
+  --muted: #18233a;
+  --muted-foreground: #95a0b4;
+  --border: #223049;
+  --input: #2a3956;
+  --ring: #8b81ff;
+  --primary: #7d72ff;
+  --primary-foreground: #ffffff;
+  --primary-soft: #1d1a44;
+  --primary-soft-foreground: #c4bfff;
+  --teal: #2dd4bf;
+  --teal-soft: #0f2c2d;
+  --amber: #f5b546;
+  --amber-soft: #2e2512;
+  --amber-foreground: #f5c76d;
+  --coral: #f07b65;
+  --coral-soft: #331a17;
+  --sidebar: #080d16;
+  --sidebar-foreground: #aeb7c7;
+  --sidebar-active: #152034;
+  --unverified: #8792a6;
+  --unverified-soft: #1a2436;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-amber-foreground: var(--amber-foreground);
+  --color-coral: var(--coral);
+  --color-coral-soft: var(--coral-soft);
+  --color-navy: var(--navy);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-unverified: var(--unverified);
+  --color-unverified-soft: var(--unverified-soft);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.015em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+/* Still scrollable (wheel, touch, keyboard), but without a visible bar — used on the dark sidebar. */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* With the bar hidden, a soft glow at the top/bottom edge shows there is more to scroll. The
+   "local" covers move with the content and hide each glow once that end is reached. */
+.sidebar-scroll-hint {
+  background:
+    linear-gradient(var(--sidebar) 30%, transparent) top / 100% 36px no-repeat local,
+    linear-gradient(transparent, var(--sidebar) 70%) bottom / 100% 36px no-repeat local,
+    linear-gradient(rgba(255, 255, 255, 0.1), transparent) top / 100% 16px no-repeat scroll,
+    linear-gradient(transparent, rgba(255, 255, 255, 0.1)) bottom / 100% 16px no-repeat scroll;
+  background-color: var(--sidebar);
+}
+
+.prose-rr p {
+  margin: 0.5rem 0;
+}

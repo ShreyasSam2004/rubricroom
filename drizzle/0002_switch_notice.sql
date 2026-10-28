@@ -1,0 +1,1 @@
+ALTER TABLE "workspaces" ADD COLUMN "switched_from_id" text;

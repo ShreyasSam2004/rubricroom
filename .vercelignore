@@ -1,0 +1,21 @@
+# Never upload secrets or local state. (When this file exists, Vercel doesn't read .gitignore.)
+.env
+.env.local
+.env.*.local
+.env.development*
+.env.production*
+node_modules
+.next
+.vercel
+.tmp
+.data
+*.tsbuildinfo
+next-env.d.ts
+
+# Not needed to build or run the site
+brag-output*
+wispr_flow*.mp4
+tests
+playwright-report
+test-results
+coverage
