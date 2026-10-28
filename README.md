@@ -3,7 +3,7 @@
 **Challenge your idea before the judges do.**
 _Research smarter. Build differently. Prove what matters._
 
-**Live app: [rubricroom.vercel.app](https://rubricroom.vercel.app)**. No login needed: click *Try RubricRoom with a Real Hackathon* to open the WeMakeDevs × Wispr Flow challenge.
+**Live app: [rubricroom.vercel.app](https://rubricroom.vercel.app)**. No login needed. A first visit opens a labelled sample workspace on the WeMakeDevs × Wispr Flow challenge: three sample ideas, two Judge's Room sessions, a build plan, an evidence note and Opportunity Radar results, all produced by the real agents. Paste your own hackathon link to start on yours.
 
 Paste a hackathon link, pitch your idea by voice, and let a team of AI specialists research the competition, challenge your assumptions, find better opportunities and build an evidence-backed strategy.
 
@@ -16,7 +16,7 @@ RubricRoom was built for the **WeMakeDevs × Wispr Flow "No Hands" challenge (Tr
 | Capability | What actually happens |
 |---|---|
 | **Hackathon Intelligence** | Fetches the official page through an SSRF-safe fetcher, follows linked rules/judging/schedule/FAQ pages, extracts the event dossier and **checks every claim's quote against the retrieved text**. Conflicts between sources are shown with the reason one was preferred (source-authority hierarchy). Missing fields say *Not verified*. |
-| **Animated-counter recovery** | The WeMakeDevs judging page renders its weights as "0%" in static HTML and animates them in the browser. RubricRoom recovers 30/30/25/15 from the page's own markup, pairs each value with the criterion label it precedes, and labels the result *recovered from page markup*. |
+| **Animated-counter recovery** | The WeMakeDevs judging page renders its weights as "0%" in static HTML and animates them in the browser. RubricRoom recovers 30/30/25/15 from the page's own markup, pairs each value with the criterion label it precedes, and labels the result *recovered from page markup*. When a page only draws relative bars (Flip the Switch draws them at twice the weight), the bar widths are scaled to 100, but only if every weight comes out whole. A 0% counter is never saved as a weight. |
 | **Competitor research (Scout)** | Varied search angles (not just the title) → GitHub REST API, Hacker News (Algolia), and Devpost/Product Hunt/web via Tavily or Exa → reads the actual READMEs/pages → compares concept *structure* (user, problem, workflow, input, output…), not names → originality report with explicit research limitations. |
 | **Opportunity Radar (Nova)** | Six discovery modes + eight modifiers. Gathers real signals first (HN pain-point comments, GitHub crowding counts, the organizer's own example ideas). Problems are labelled *observed* only when a retrieved signal backs them; references can only be URLs research retrieved — enforced in code. A diversity check removes the same concept under a new name. |
 | **The Judge's Room (Verdict)** | Voice-first debate against simulated evaluation roles (User Advocate, Originality Skeptic, Engineering, Sponsor, Demo). Every claim you make is classified (user-reported / checkable / speculative / correction / differentiator). **Code-enforced guardrails**: ratings can't rise without an accepted, non-speculative claim; user-reported evidence moves a criterion at most +1 and never to 5; links are reachability-checked (and a link to the hackathon's own site doesn't count). Corrections become *proposals* you confirm. |

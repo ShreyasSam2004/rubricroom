@@ -104,18 +104,19 @@ function jsonLdDates($: cheerio.CheerioAPI) {
 }
 
 const VALUE_PATTERNS = [
-  /\\?"value\\?":\s*(\d{1,3}(?:\.\d+)?)\s*,\s*\\?"duration\\?"/g, // RSC payload: {"value":30,"duration":1.2}
-  /\\?"share\\?":\s*(\d{1,3}(?:\.\d+)?)/g, // bar share props
-  /width:\s*(\d{1,3}(?:\.\d+)?)%/g, // progress bars: style="width:30%"
-  /(?:data-(?:value|target|count|to)|aria-valuenow)="(\d{1,3}(?:\.\d+)?)"/g,
-];
+  { kind: "value", re: /\\?"value\\?":\s*(\d{1,3}(?:\.\d+)?)\s*,\s*\\?"duration\\?"/g }, // RSC payload: {"value":30,"duration":1.2}
+  { kind: "share", re: /\\?"share\\?":\s*(\d{1,3}(?:\.\d+)?)/g }, // bar share props
+  { kind: "bar", re: /width:\s*(\d{1,3}(?:\.\d+)?)%/g }, // progress bars: style="width:30%"
+  { kind: "data", re: /(?:data-(?:value|target|count|to)|aria-valuenow)="(\d{1,3}(?:\.\d+)?)"/g },
+] as const;
+type ValueKind = (typeof VALUE_PATTERNS)[number]["kind"];
 
 function escapeForJson(s: string) {
   return JSON.stringify(s).slice(1, -1);
 }
 
 /** Nearest numeric value that appears in the markup shortly *before* `label`. */
-function valueBefore(rawHtml: string, label: string, window = 1200): number | null {
+function valueBefore(rawHtml: string, label: string, window = 1200): { value: number; kind: ValueKind } | null {
   const variants = [label, escapeForJson(label), escapeForJson(escapeForJson(label)), label.replace(/'/g, "&#x27;").replace(/"/g, "&quot;")];
   let idx = -1;
   for (const v of variants) {
@@ -124,14 +125,26 @@ function valueBefore(rawHtml: string, label: string, window = 1200): number | nu
   }
   if (idx < 0) return null;
   const slice = rawHtml.slice(Math.max(0, idx - window), idx);
-  let best: { pos: number; value: number } | null = null;
-  for (const pattern of VALUE_PATTERNS) {
-    for (const m of slice.matchAll(new RegExp(pattern.source, "g"))) {
+  let best: { pos: number; value: number; kind: ValueKind } | null = null;
+  for (const { kind, re } of VALUE_PATTERNS) {
+    for (const m of slice.matchAll(new RegExp(re.source, "g"))) {
       const pos = m.index ?? 0;
-      if (!best || pos > best.pos) best = { pos, value: Number(m[1]) };
+      if (!best || pos > best.pos) best = { pos, value: Number(m[1]), kind };
     }
   }
-  return best ? best.value : null;
+  return best ? { value: best.value, kind: best.kind } : null;
+}
+
+/**
+ * Bars are often drawn relative to each other (e.g. at twice the weight: 60/50/50/40 for
+ * 30/25/25/20). When every recovered value is a bar width and they don't sum to 100, scale them —
+ * but only if every weight comes out whole, so a coincidence can't pass as a published rubric.
+ */
+function scaleBarWidths(values: { value: number; kind: ValueKind }[]): number[] | null {
+  const sum = values.reduce((a, v) => a + v.value, 0);
+  if (!values.every((v) => v.kind === "bar") || sum === 100 || sum <= 0) return null;
+  const scaled = values.map((v) => (v.value * 100) / sum);
+  return scaled.every((w) => Math.abs(w - Math.round(w)) < 0.01) ? scaled.map(Math.round) : null;
 }
 
 /**
@@ -143,25 +156,27 @@ function valueBefore(rawHtml: string, label: string, window = 1200): number | nu
 export function recoverMarkupHints(rawHtml: string, visibleText: string): MarkupHint[] {
   const lines = visibleText.split("\n").map((l) => l.trim()).filter(Boolean);
   const labels: string[] = [];
-  for (let i = 0; i < lines.length - 1; i++) {
-    if (/^0\s?%$/.test(lines[i])) labels.push(lines[i + 1].replace(/^#+\s*/, ""));
+  for (let i = 0; i < lines.length; i++) {
+    // The counter is either its own line ("0%", label below) or shares the label's line ("0 % Use of Switch").
+    const inline = lines[i].match(/^0\s?%\s+(\S.{1,80})$/);
+    if (inline) labels.push(inline[1].replace(/^#+\s*/, ""));
+    else if (/^0\s?%$/.test(lines[i]) && lines[i + 1]) labels.push(lines[i + 1].replace(/^#+\s*/, ""));
   }
   if (labels.length < 2) return [];
-  const hints: MarkupHint[] = [];
-  for (const label of labels) {
-    const value = valueBefore(rawHtml, label);
-    if (value !== null) {
-      hints.push({ text: `Markup value ${value}% precedes "${label}" (visible text shows an animated 0%).`, label, value });
-    }
-  }
-  if (hints.length) {
-    const sum = hints.reduce((a, h) => a + (h.value ?? 0), 0);
-    hints.unshift({
-      text: `Visible text shows "0%" ${labels.length} times (animated counters). ${hints.length} values recovered from page markup${
-        sum === 100 ? " and they sum to 100" : ` (sum ${sum})`
-      }.`,
-    });
-  }
+  const found = labels.map((label) => ({ label, hit: valueBefore(rawHtml, label) })).filter((f) => f.hit !== null) as { label: string; hit: { value: number; kind: ValueKind } }[];
+  if (!found.length) return [];
+  const scaled = scaleBarWidths(found.map((f) => f.hit));
+  const hints: MarkupHint[] = found.map(({ label, hit }, i) =>
+    scaled
+      ? { text: `Bar width ${hit.value}% next to "${label}" scales to ${scaled[i]}% (bars are drawn relative to each other; visible text shows an animated 0%).`, label, value: scaled[i] }
+      : { text: `Markup value ${hit.value}% precedes "${label}" (visible text shows an animated 0%).`, label, value: hit.value },
+  );
+  const sum = hints.reduce((a, h) => a + (h.value ?? 0), 0);
+  hints.unshift({
+    text: `Visible text shows "0%" ${labels.length} times (animated counters). ${hints.length} values recovered from page markup${
+      scaled ? ` by scaling the bar widths (sum ${found.reduce((a, f) => a + f.hit.value, 0)}) to 100` : sum === 100 ? " and they sum to 100" : ` (sum ${sum})`
+    }.`,
+  });
   return hints;
 }
 

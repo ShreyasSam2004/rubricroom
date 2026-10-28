@@ -82,7 +82,14 @@ export async function persistExtraction(opts: {
     extractionNotes: [...opts.notes, ...sources.flatMap((s) => s.markupHints.filter((h) => !h.label).map((h) => `${s.title ?? s.url}: ${h.text}`))],
   };
 
-  // Criteria
+  // Criteria. A 0% weight is an animated counter's starting value, never a published weight; and
+  // "recovered from page markup" must point at a value the markup recovery actually found.
+  const key = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const recovered = sources.flatMap((s) => s.markupHints).filter((h) => h.label && typeof h.value === "number");
+  for (const c of x.criteria) {
+    if (c.weight === 0) c.weight = null;
+    if (c.weightFromMarkupHint && !recovered.some((h) => h.value === c.weight && (key(h.label!).includes(key(c.name)) || key(c.name).includes(key(h.label!))))) c.weightFromMarkupHint = false;
+  }
   const criteriaRows = x.criteria.map((c, i) => {
     const viaMarkup = c.weightFromMarkupHint;
     const claim = make("criterion", `${c.name} — ${c.weight !== null ? `${c.weight}%` : "weight not published"}`, c.sourceRef, c.quote, "high", viaMarkup ? "Weight recovered from the judging page markup; the visible text shows an animated 0%." : null, {

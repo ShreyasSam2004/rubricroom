@@ -360,8 +360,15 @@ export function heuristicExtract(sources: SourceForExtraction[], now = new Date(
       if (inline) {
         const numFirst = /^\d/.test(inline[1]);
         const name = clean(numFirst ? inline[2] : inline[1]);
-        const weight = Number(numFirst ? inline[1] : inline[2]);
-        out.criteria.push({ name, description: clean((numFirst ? "" : inline[3]) ?? ""), weight, weightFromMarkupHint: false, track: null, sourceRef: src.ref, quote: clean(l.text) });
+        let weight: number | null = Number(numFirst ? inline[1] : inline[2]);
+        let fromHint = false;
+        if (weight === 0) {
+          // "0 % Use of Switch": an animated counter on the label's own line.
+          const hint = src.markupHints.find((h) => h.label && clean(h.label) === name && typeof h.value === "number");
+          weight = hint ? hint.value! : null;
+          fromHint = Boolean(hint);
+        }
+        out.criteria.push({ name, description: clean((numFirst ? "" : inline[3]) ?? ""), weight, weightFromMarkupHint: fromHint, track: null, sourceRef: src.ref, quote: clean(l.text) });
       }
     }
   }

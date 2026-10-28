@@ -31,6 +31,39 @@ describe("HTML extraction on the real WeMakeDevs pages", () => {
   it("does not invent hints when counters are not animated", () => {
     expect(recoverMarkupHints("<p>Innovation 30%</p>", "Innovation 30%")).toEqual([]);
   });
+
+  it("recovers weights from relative bars when the counter shares the label's line (Flip the Switch)", () => {
+    const p = extractHtml(fixture("switch-judging.html"), "https://www.wemakedevs.org/hackathons/switch");
+    expect(p.text).toMatch(/^0\s?%\s+Use of Switch$/m); // the visible text really says 0%
+    const pairs = p.markupHints.filter((h) => h.label).map((h) => [h.label, h.value]);
+    // The page draws each bar at twice its weight (60/50/50/40); in a browser the counters read 30/25/25/20.
+    expect(pairs).toEqual([
+      ["Use of Switch", 30],
+      ["Technical execution", 25],
+      ["Creativity and impact", 25],
+      ["Presentation", 20],
+    ]);
+    expect(p.markupHints[0].text).toMatch(/scaling the bar widths \(sum 200\) to 100/);
+    const src: SourceForExtraction = { ref: 0, sourceId: "src_0", url: "https://www.wemakedevs.org/hackathons/switch", title: p.title, sourceType: "official_judging", authority: 1, publishedAt: null, retrievedAt: null, text: p.text, markupHints: p.markupHints };
+    expect(heuristicExtract([src], NOW).criteria.map((c) => [c.name, c.weight, c.weightFromMarkupHint])).toEqual([
+      ["Use of Switch", 30, true],
+      ["Technical execution", 25, true],
+      ["Creativity and impact", 25, true],
+      ["Presentation", 20, true],
+    ]);
+  });
+
+  it("only scales bar widths when every weight comes out whole", () => {
+    const html = (w: number[]) => w.map((v, i) => `<span style="width:${v}%"></span><dt>0 % Criterion ${i + 1}</dt>`).join("");
+    const text = (n: number) => Array.from({ length: n }, (_, i) => `0 % Criterion ${i + 1}`).join("\n");
+    expect(recoverMarkupHints(html([60, 50, 50, 40]), text(4)).filter((h) => h.label).map((h) => h.value)).toEqual([30, 25, 25, 20]);
+    expect(recoverMarkupHints(html([37, 41, 61]), text(3)).filter((h) => h.label).map((h) => h.value)).toEqual([37, 41, 61]); // not proportional to whole weights: left as found
+  });
+
+  it("never keeps a 0% counter as a weight", () => {
+    const src: SourceForExtraction = { ref: 0, sourceId: "src_0", url: "https://example.org/judging", title: "Judging", sourceType: "official_judging", authority: 1, publishedAt: null, retrievedAt: null, text: "Judging criteria\n0 % Use of the API\n0 % Technical execution", markupHints: [] };
+    expect(heuristicExtract([src], NOW).criteria.map((c) => c.weight)).toEqual([null, null]);
+  });
 });
 
 describe("deterministic event extraction", () => {
